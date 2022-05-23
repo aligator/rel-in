@@ -1,6 +1,7 @@
 # rel-in
 
-This is a repo to show a problem with the preloading of rel.
+This is a repo to show a problem with the preloading of rel.  
+See this issue: https://github.com/go-rel/rel/issues/283
 
 # How to run
 ```
