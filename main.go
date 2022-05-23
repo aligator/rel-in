@@ -1,0 +1,53 @@
+package main
+
+import (
+	"context"
+	"fmt"
+	"github.com/go-rel/migration"
+	"github.com/go-rel/mysql"
+	"github.com/go-rel/rel"
+	_ "github.com/go-sql-driver/mysql"
+	"log"
+	"rel-in/db/migrations"
+	"rel-in/repository"
+	"time"
+)
+
+func main() {
+	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8&parseTime=True&loc=Local",
+		"root",
+		"admin",
+		"127.0.0.1",
+		"7493",
+		"rel")
+	fmt.Println(dsn)
+	adapter := mysql.MustOpen(dsn)
+	repo := rel.New(adapter)
+	repo.Instrumentation(func(ctx context.Context, op string, message string) func(err error) {
+		t := time.Now()
+
+		return func(err error) {
+			duration := time.Since(t)
+			log.Print("[duration: ", duration, " op: ", op, "] ", message, " - ", err)
+		}
+	})
+
+	var (
+		ctx = context.TODO()
+		m   = migration.New(repo)
+	)
+
+	// Register migrations
+	m.Register(20222305191100, migrations.MigrateCreateTodos, migrations.RollbackCreateTodos)
+
+	// Run migrations
+	m.Migrate(ctx)
+
+	userRepo := repository.NewUserRepository(repo)
+
+	_, err := userRepo.FindAll(999)
+	fmt.Println(err)
+
+	_, err = userRepo.FindAll(-1)
+	fmt.Println(err)
+}
