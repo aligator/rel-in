@@ -7,8 +7,12 @@ import (
 	"github.com/go-rel/mysql"
 	"github.com/go-rel/rel"
 	_ "github.com/go-sql-driver/mysql"
+	grom_mysql "gorm.io/driver/mysql"
+	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 	"log"
 	"rel-in/db/migrations"
+	"rel-in/entity"
 	"rel-in/repository"
 	"time"
 )
@@ -48,6 +52,22 @@ func main() {
 	_, err := userRepo.FindAll(999)
 	fmt.Println(err)
 
-	_, err = userRepo.FindAll(-1)
-	fmt.Println(err)
+	//_, err = userRepo.FindAll(-1)
+	//fmt.Println(err)
+
+	gormLog := logger.Default
+	db, err := gorm.Open(grom_mysql.Open(dsn), &gorm.Config{
+		Logger: gormLog,
+	})
+	if err != nil {
+		panic("failed to connect database")
+	}
+
+	var gormUser []entity.User
+
+	db.Preload("Tasks").Debug().Find(&gormUser)
+	fmt.Println(gormUser)
+
+	db.Preload("Tasks").Limit(999).Debug().Find(&gormUser)
+	fmt.Println(gormUser)
 }
